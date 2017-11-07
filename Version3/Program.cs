@@ -8,58 +8,24 @@ using static Version3.Dir;
 
 namespace Version3
 {
-    class Program
+    class Game
     {
+        public CommandActions CA { get; set; }
+        public int Turn { get; set; } = 1;
+        public Player PlayerOne { get; private set; }
+        public readonly RoomSet maze = RoomSet.Instance;
+        public Game(Player P) { PlayerOne = P; CA = new CommandActions(this); }
+
         static void Main(string[] args)
         {
-            //Create a set of rooms
-            RoomSet rooms = RoomSet.Instance;
-            rooms.AddMultipleRooms(new string[] {   "a room",
-                                                    "another room",
-                                                    "the third room",
-                                                    "Room 101"
-                                                });
-            //initialize start point  
-            rooms.CurrentRoom = rooms[0];
-
-            Util.BiLink(rooms[0], East, rooms[1], West);
-            Util.BiLink(rooms[1], South, rooms[3], North);
-            Util.BiLink(rooms[3], West, rooms[2], East);
-            Util.BiLink(rooms[2], North, rooms[0], South);
-
-            //Place exit 
-            rooms[3][South] = Exit.Instance;
-
-            //game loop might consist of
-
-            //test Command thingies ...
-
-            CommandParser.AddCommand("look", CommandActions.Look);
-            CommandParser.AddCommand("help", (s) => Console.WriteLine("help not implemented yet"));
-            
-            //test parser
+            Game G = new Game(new Player() { Name = "Ashley" });
+            Util.RoomInitializor(G);
+            Util.CommandInitializor(G.CA);
             while (true)
+            {
+                Console.Write($"{G.Turn}: ");
                 CommandParser.GetNextCommand();
-
-            //while (true)
-            //{
-            //    Console.WriteLine($"You are in {rooms.CurrentRoom.Description}");
-
-            //    List<Dir> validExits = rooms.CurrentRoom.GetValidExits();
-
-            //    Console.WriteLine("Valid exits for current room include ..");
-            //    for (int i = 1; i <= validExits.Count; i++) Console.Write($"{i}) {validExits[i - 1]} ");
-            //    Console.Write("\nPick One!  ");
-
-            //    // No input validation here - but note that this is not how it will
-            //    // be done in reality, user will type command words that will get converted to 
-            //    // directions
-            //    Dir ChosenDir = validExits[int.Parse(Console.ReadLine()) - 1];
-            //    rooms.CurrentRoom = rooms.CurrentRoom[ChosenDir];
-
-            //    if (rooms.CurrentRoom.Equals(Exit.Instance)) { Console.WriteLine("woohoo!"); break; }
-            //}
-            Console.Read();
+            }
         }
 
     }
@@ -80,6 +46,35 @@ namespace Version3
         static public void BiLink(Room r1, Dir d1, Room r2, Dir d2)
         {
             r1[d1] = r2; r2[d2] = r1;
+        }
+
+        // Sets up rooms
+        static public void RoomInitializor(Game G)
+        {
+            //Create a set of rooms
+            RoomSet rooms = G.maze;
+            rooms.AddMultipleRooms(new string[] {   "a room",
+                                                    "another room",
+                                                    "the third room",
+                                                    "Room 101"
+                                                });
+            //initialize start point  
+            G.PlayerOne.CurrentRoom = rooms[0];
+
+            Util.BiLink(rooms[0], East, rooms[1], West);
+            Util.BiLink(rooms[1], South, rooms[3], North);
+            Util.BiLink(rooms[3], West, rooms[2], East);
+            Util.BiLink(rooms[2], North, rooms[0], South);
+
+            //Place exit 
+            rooms[3][South] = Exit.Instance;
+        }
+
+        static public void CommandInitializor(CommandActions CA)
+        {
+            CommandParser.AddCommand("look", CA.Look);
+            CommandParser.AddCommand("quit", CA.Quit);
+            CommandParser.AddCommand("help", (s) => Console.WriteLine("help not implemented yet"));
         }
     }
 
@@ -114,6 +109,16 @@ namespace Version3
                 if (this[D] != null) VE.Add(D);
             return VE;
         }
+
+        public string GetValidExitsAsString()
+        {
+            StringBuilder s = new StringBuilder();
+            foreach (Dir d in GetValidExits())
+            {
+                s.Append($"{d} ");
+            }
+            return $"There are exits {s.ToString()}";
+        }
     }
 
     /// <summary>
@@ -123,7 +128,7 @@ namespace Version3
     {
         private static readonly RoomSet instance = new RoomSet();
         private List<Room> roomset = new List<Room>();
-        public Room CurrentRoom { get; set; }
+        //public Room CurrentRoom { get; set; }
         public int Count { get { return roomset.Count; } }
         public void AddRoom(Room R) => roomset.Add(R);
         private RoomSet() { }
@@ -169,15 +174,10 @@ namespace Version3
         public static Exit Instance { get { return instance; } }
     }
 
+    //move currentRoom into player - player should know where he is!
     class Player
     {
+        public Room CurrentRoom { get; set; }
         public string Name { get; set; }
-    }
-
-    class Game
-    {
-        public Player PlayerOne { get; private set; }
-        public readonly RoomSet maze = RoomSet.Instance;
-        public Game(Player P) { PlayerOne = P; }
     }
 }
