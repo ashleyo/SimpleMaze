@@ -14,18 +14,51 @@ namespace Version3
         public int Turn { get; set; } = 1;
         public Player PlayerOne { get; private set; }
         public readonly RoomSet maze = RoomSet.Instance;
-        public Game(Player P) { PlayerOne = P; CA = new CommandActions(this); }
+        public Game(Player P) {
+            PlayerOne = P;
+            CA = new CommandActions(this);
+            this.RoomInitializor();
+            this.CommandInitializor();
+        }
 
         static void Main(string[] args)
         {
             Game G = new Game(new Player() { Name = "Ashley" });
-            Util.RoomInitializor(G);
-            Util.CommandInitializor(G.CA);
+            
             while (true)
             {
                 Console.Write($"{G.Turn}: ");
                 CommandParser.GetNextCommand();
             }
+        }
+
+        // Sets up rooms. Will need to be driven by a map file ultimately.
+        public void RoomInitializor()
+        {
+            //Create a set of rooms
+            RoomSet rooms = this.maze;
+            rooms.AddMultipleRooms(new string[] {   "a room",
+                                                    "another room",
+                                                    "the third room",
+                                                    "Room 101"
+                                                });
+            //initialize start point  
+            this.PlayerOne.CurrentRoom = rooms[0];
+
+            Util.BiLink(rooms[0], East, rooms[1], West);
+            Util.BiLink(rooms[1], South, rooms[3], North);
+            Util.BiLink(rooms[3], West, rooms[2], East);
+            Util.BiLink(rooms[2], North, rooms[0], South);
+
+            //Place exit 
+            rooms[3][South] = Exit.Instance;
+        }
+
+        public void CommandInitializor()
+        {
+            CommandParser.AddCommand("look", CA.Look);
+            CommandParser.AddCommand("quit", CA.Quit);
+            CommandParser.AddCommand("help", (s) => Console.WriteLine("help not implemented yet"));
         }
 
     }
@@ -48,34 +81,7 @@ namespace Version3
             r1[d1] = r2; r2[d2] = r1;
         }
 
-        // Sets up rooms
-        static public void RoomInitializor(Game G)
-        {
-            //Create a set of rooms
-            RoomSet rooms = G.maze;
-            rooms.AddMultipleRooms(new string[] {   "a room",
-                                                    "another room",
-                                                    "the third room",
-                                                    "Room 101"
-                                                });
-            //initialize start point  
-            G.PlayerOne.CurrentRoom = rooms[0];
-
-            Util.BiLink(rooms[0], East, rooms[1], West);
-            Util.BiLink(rooms[1], South, rooms[3], North);
-            Util.BiLink(rooms[3], West, rooms[2], East);
-            Util.BiLink(rooms[2], North, rooms[0], South);
-
-            //Place exit 
-            rooms[3][South] = Exit.Instance;
-        }
-
-        static public void CommandInitializor(CommandActions CA)
-        {
-            CommandParser.AddCommand("look", CA.Look);
-            CommandParser.AddCommand("quit", CA.Quit);
-            CommandParser.AddCommand("help", (s) => Console.WriteLine("help not implemented yet"));
-        }
+        
     }
 
     class Room

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Version3
 {
@@ -66,7 +64,7 @@ namespace Version3
         public void Quit(string command="")
         {
             Console.WriteLine("The roof falls in on your head. You die.");
-            System.Threading.Thread.Sleep(2000);
+            Thread.Sleep(2000);
             Environment.Exit(0);
         }
 
@@ -79,9 +77,12 @@ namespace Version3
             if (!validExits.Contains(d)) { Console.WriteLine("I can't go that way!"); return; }
             else {
                 G.PlayerOne.CurrentRoom = cr[d];
-                G.Turn++;
-                if (!G.PlayerOne.CurrentRoom.Equals(Exit.Instance))               
+               
+                if (!G.PlayerOne.CurrentRoom.Equals(Exit.Instance))
+                {
+                    G.Turn++;
                     this.Look();
+                }                                
                 else this.GameOver();
             }
         }
