@@ -39,7 +39,6 @@ namespace Version3
     // This class implements commands (simple commands may be declared ad hoc using lambda 
     // notation, see the example in the static constructor of CommandParser
     // which provides a 'default' action)
-    // TODO What would be cool -- can we think of a way of adding a 'generic' CommandAction for all direction in the Dir enum?
     class CommandActions
     {
         private Game G;
@@ -48,10 +47,10 @@ namespace Version3
         {
             this.G = G;
 
-            //Add all direction to commands and point them at 'Move'
-            foreach (string s in Enum.GetNames(typeof(Dir)))
+            //Add all direction variants to commands and point them at 'Move'
+            foreach (string S in DirCanonical.Keys)
             {
-                CommandParser.AddCommand(s.ToLower(),this.Move);
+                CommandParser.AddCommand(S, this.Move);
             }
         }
 
@@ -70,12 +69,13 @@ namespace Version3
 
         public void Move(string command)
         {
+            command = command.Split(' ')[0];
             Room cr = G.PlayerOne.CurrentRoom;
-            Dir d = (Dir)Enum.Parse(typeof(Dir), command, true);
-            Console.WriteLine($"Going {d}");
+            Dir d = (Dir)Enum.Parse(typeof(Dir), DirCanonical[command], true);                      
             List<Dir> validExits = cr.GetValidExits();
             if (!validExits.Contains(d)) { Console.WriteLine("I can't go that way!"); return; }
             else {
+                Console.WriteLine($"Going {d}");
                 G.PlayerOne.CurrentRoom = cr[d];
                
                 if (!G.PlayerOne.CurrentRoom.Equals(Exit.Instance))
@@ -95,6 +95,24 @@ namespace Version3
             Console.ReadKey();
             Environment.Exit(0);
         }
+
+        //create a dictionary mapping between legitimate string representations of directions
+        //and the actual string used
+        // Accepted at this time [North] [north] [N] [n] => North
+        public static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
+        private static string[] names = Enum.GetNames(typeof(Dir));
+        static CommandActions()
+        {
+            foreach (string name in names)
+            {
+                DirCanonical[name] = name;
+                DirCanonical[name.ToLower()] = name;
+                DirCanonical[name.Substring(0,1).ToLower()] = name;
+                DirCanonical[name.Substring(0, 1).ToUpper()] = name;
+            }
+        }
+
+
     }
 }
 

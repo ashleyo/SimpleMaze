@@ -58,7 +58,7 @@ namespace Version3
         {
             CommandParser.AddCommand("look", CA.Look);
             CommandParser.AddCommand("quit", CA.Quit);
-            CommandParser.AddCommand("help", (s) => Console.WriteLine("help not implemented yet"));
+            CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
         }
 
     }
