@@ -16,8 +16,6 @@ namespace Version2
         //gotos rejected in favour of while+break
         static void Main(string[] args)
         {
-            //TODO CurrentRoom should be a property of Player to allow for multi-player expansion
-
             Game currentGame = new Game(new Player() { Name = "Ashley" });
 
             RoomSet rooms = currentGame.maze;

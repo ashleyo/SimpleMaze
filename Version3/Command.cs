@@ -54,11 +54,10 @@ namespace Version3
             }
         }
 
-        public void Look(string command = "")
-        {
-            Console.WriteLine($"You are in {G.PlayerOne.CurrentRoom.Description}");
-            Console.WriteLine($"{G.PlayerOne.CurrentRoom.GetValidExitsAsString()}");
-        }
+        public void Look(string command = "") =>
+            Console.WriteLine($"You are in {G.PlayerOne.CurrentRoom.Description}\n" +
+                $"{G.PlayerOne.CurrentRoom.GetValidExitsAsString()}");
+        
 
         public void Quit(string command="")
         {
@@ -96,9 +95,10 @@ namespace Version3
             Environment.Exit(0);
         }
 
-        //create a dictionary mapping between legitimate string representations of directions
-        //and the actual string used
+        // create a dictionary mapping between legitimate string representations of directions
+        // and the actual string used
         // Accepted at this time [North] [north] [N] [n] => North
+        // Allows multiple forms of a command to be accepted
         public static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
         private static string[] names = Enum.GetNames(typeof(Dir));
         static CommandActions()

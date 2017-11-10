@@ -45,15 +45,17 @@ namespace Version3
             //initialize start point  
             this.PlayerOne.CurrentRoom = rooms[0];
 
-            Util.BiLink(rooms[0], East, rooms[1], West);
-            Util.BiLink(rooms[1], South, rooms[3], North);
-            Util.BiLink(rooms[3], West, rooms[2], East);
-            Util.BiLink(rooms[2], North, rooms[0], South);
+            Util.Link(rooms[0], East, rooms[1], West);
+            Util.Link(rooms[1], South, rooms[3], North);
+            Util.Link(rooms[3], West, rooms[2], East);
+            Util.Link(rooms[2], North, rooms[0], South);
 
             //Place exit 
             rooms[3][South] = Exit.Instance;
         }
 
+        // Commands mapping to 'Move' are set up automatically from the Dir Enum
+        // and should not be added here
         public void CommandInitializor()
         {
             CommandParser.AddCommand("look", CA.Look);
@@ -76,9 +78,16 @@ namespace Version3
             return s.ToString().TrimEnd();
         }
 
-        static public void BiLink(Room r1, Dir d1, Room r2, Dir d2)
+        static public void Link(Room r1, Dir d1, Room r2, Dir d2)
         {
-            r1[d1] = r2; r2[d2] = r1;
+            Link(r1, d1, r2);
+            Link(r2, d2, r1);
+           // r1[d1] = r2; r2[d2] = r1;
+        }
+
+        static public void Link(Room r1, Dir d1, Room r2)
+        {
+            r1[d1] = r2;
         }
 
         
@@ -132,11 +141,17 @@ namespace Version3
     /// </summary>
     sealed class RoomSet : IEnumerable<Room>
     {
+        private static int roomkey = 0;
         private static readonly RoomSet instance = new RoomSet();
-        private List<Room> roomset = new List<Room>();
-        //public Room CurrentRoom { get; set; }
+        private Dictionary<int, Room> roomset = new Dictionary<int, Room>();
+
         public int Count { get { return roomset.Count; } }
-        public void AddRoom(Room R) => roomset.Add(R);
+  
+        //TODO Add method to find key from description (wrapper around existing Dictionary method)
+        // intent is that the returned id can be stashed for use by an initailaizor that 
+        // wants to create links between rooms
+        public int AddRoom(Room R) { roomset[roomkey] = R; return roomkey++; }
+
         private RoomSet() { }
 
         public static RoomSet Instance { get { return instance; } }
@@ -146,9 +161,10 @@ namespace Version3
             get { return roomset[i]; }
         }
 
+        //Note Values not Keys ....
         public IEnumerator<Room> GetEnumerator()
         {
-            return roomset.GetEnumerator();
+            return roomset.Values.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
