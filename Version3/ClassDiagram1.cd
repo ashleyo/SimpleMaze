@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="I wonder ....&#xD;&#xA;&#xD;&#xA;* Two static 'util' classes. Should they be merged? Argument against is that they separate well into two groups.&#xD;&#xA;* Dir is slightly odd floating around in isolation. Should it perhaps be a sub-type of Roomset? What other changes would that require?&#xD;&#xA;* Game and CA are very tightly coupled. Should CA be merged with Game? Or should the relationship be formalized via an interface?&#xD;&#xA;* Exit inherits from an inner clas sof roomset. Probably it too should be an internal class of roomset.">
+    <Position X="14.042" Y="4.667" Height="2.708" Width="4.752" />
+  </Comment>
+  <Class Name="Version3.Game">
+    <Position X="4" Y="2.75" Width="1.75" />
+    <NestedTypes>
+      <Class Name="Version3.Game.CommandActions" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Program.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AgAAAEAACAAAAAAAAAACAAAAAAAAAAAAABAABAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="maze" />
+      <Property Name="PlayerOne" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Version3.Util">
+    <Position X="12.75" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAQAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Version3.RoomSet" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="2" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Class Name="Version3.RoomSet.Room" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Program.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="Version3.RoomSet.Exit" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Program.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAEIAAAAABCACAAAAAQAAAAAAQAEEAAAAAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Version3.Player">
+    <Position X="1.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Version3.CommandParser">
+    <Position X="16.25" Y="1.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAQABAACAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Command.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="validCommands" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Version3.CommandActions">
+    <Position X="4" Y="5.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQgAAAAIAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAYA=</HashCode>
+      <FileName>Command.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="G" />
+    </ShowAsAssociation>
+  </Class>
+  <Enum Name="Version3.Dir">
+    <Position X="14" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAAIAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAABAAY=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Delegate Name="Version3.CommandDispatcher">
+    <Position X="16.25" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Command.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
