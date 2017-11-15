@@ -11,8 +11,22 @@ namespace Version3
     // This class dispatches commands
     static class CommandParser
     {
+        // Allows multiple forms of a command to be accepted by
+        // creating a dictionary mapping between legitimate string representations of directions
+        // and the actual string used.
+        // Accepted at this time [North] [north] [N] [n] => North 
+        public static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
+        private static string[] names = Enum.GetNames(typeof(Dir));
+
         static CommandParser()
         {
+            foreach (string name in names)
+            {
+                DirCanonical[name] = name;
+                DirCanonical[name.ToLower()] = name;
+                DirCanonical[name.Substring(0, 1).ToLower()] = name;
+                DirCanonical[name.Substring(0, 1).ToUpper()] = name;
+            }
             validCommands["whut"] = (string s) => Console.WriteLine($"I don't know how to {s}");
         }
 

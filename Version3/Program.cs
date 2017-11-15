@@ -9,8 +9,37 @@ using System.Threading;
 
 namespace Version3
 {
+    //TODO - Think about this - if the first element were always 'None' then useful exits could be treated as a 1 based array rather than a 0 based array which might lead to cleaner code.
+    enum Dir { North, East, South, West, Up, Down }
+
     class Game
-    {
+    {     
+        /// <summary>
+        /// Properties, fields and non-command methods
+        /// </summary>
+
+        public int Turn { get; private set; } = 1;
+        public Player PlayerOne { get; private set; }
+        public readonly RoomSet maze; 
+        public Game(Player P)
+        {
+            PlayerOne = P;
+            maze = Map.GetRoomSet(new Map());
+            PlayerOne.CurrentRoom = maze[1]; //arbitrary, but starting in room 0 (the exit) is not supported
+            this.InitializeCommandActions();
+        }
+
+        static void Main(string[] args)
+        {
+            Game G = new Game(new Player() { Name = "Ashley" });
+
+            while (true)
+            {
+                Console.Write($"{G.Turn}: ");
+                CommandParser.GetNextCommand();
+            }
+        }
+
         /// <summary>
         ///  Game Commands
         ///  Command need to be of the delegate type CommandDipatcher
@@ -21,12 +50,15 @@ namespace Version3
         ///  Simple commands can also be added on the fly using lambda 
         ///  functions, see the static constructor of CommandParser for
         ///  an example of this.
+        ///  'Private' commands such as GameOver may be used: just ensure that they do not get added
+        ///  to the CommandParser. This prevents the player from accessing them but still allows 
+        ///  other commands to redirect to them.
         /// </summary>
 
         public void InitializeCommandActions()
         {
             //Add all direction variants to commands and point them at 'Move'
-            foreach (string S in DirCanonical.Keys)
+            foreach (string S in CommandParser.DirCanonical.Keys)
             {
                 CommandParser.AddCommand(S, this.Move);
             }
@@ -36,6 +68,8 @@ namespace Version3
             CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
 
         }
+
+        #region Commands
 
         public void Look(string command = "") =>
             Console.WriteLine($"You are in {PlayerOne.CurrentRoom.Description}\n" +
@@ -52,7 +86,7 @@ namespace Version3
         {
             command = command.Split(' ')[0];
             RoomSet.Room cr = this.PlayerOne.CurrentRoom;
-            Dir d = (Dir)Enum.Parse(typeof(Dir), DirCanonical[command], true);
+            Dir d = (Dir)Enum.Parse(typeof(Dir), CommandParser.DirCanonical[command], true);
             List<Dir> validExits = cr.GetValidExits();
             if (!validExits.Contains(d)) { Console.WriteLine("I can't go that way!"); return; }
             else
@@ -78,74 +112,8 @@ namespace Version3
             Environment.Exit(0);
         }
 
-        // Allows multiple forms of a command to be accepted by
-        // creating a dictionary mapping between legitimate string representations of directions
-        // and the actual string used
-        // Accepted at this time [North] [north] [N] [n] => North
-        
-        private static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
-        private static string[] names = Enum.GetNames(typeof(Dir));
-        static Game()
-        {
-            foreach (string name in names)
-            {
-                DirCanonical[name] = name;
-                DirCanonical[name.ToLower()] = name;
-                DirCanonical[name.Substring(0, 1).ToLower()] = name;
-                DirCanonical[name.Substring(0, 1).ToUpper()] = name;
-            }
-        }
-
-        /// <summary>
-        /// Properties, fields and non-command methods
-        /// </summary>
-
-        public int Turn { get; private set; } = 1;
-        public Player PlayerOne { get; private set; }
-        public readonly RoomSet maze = new RoomSet();
-        public Game(Player P)
-        {
-            PlayerOne = P;
-            this.RoomInitializor();
-            this.InitializeCommandActions();
-        }
-
-        static void Main(string[] args)
-        {
-            Game G = new Game(new Player() { Name = "Ashley" });
-
-            while (true)
-            {
-                Console.Write($"{G.Turn}: ");
-                CommandParser.GetNextCommand();
-            }
-        }
-
-        // Sets up rooms. Will need to be driven by a map file ultimately.
-        public void RoomInitializor()
-        {
-            //Create a set of rooms
-            RoomSet rooms = this.maze;
-            rooms.AddMultipleRooms(new string[] {   "a room",
-                                                    "another room",
-                                                    "the third room",
-                                                    "Room 101"
-                                                });
-            //initialize start point  
-            this.PlayerOne.CurrentRoom = rooms[0];
-
-            Util.Link(rooms[0], East, rooms[1], West);
-            Util.Link(rooms[1], South, rooms[3], North);
-            Util.Link(rooms[3], West, rooms[2], East);
-            Util.Link(rooms[2], North, rooms[0], South);
-
-            //Place exit 
-            rooms[3][South] = RoomSet.Exit.Instance;
-        }
+        #endregion
     }
-
-    //TODO - Think about this - if the first element were always 'None' then useful exits could be treated as a 1 based array rather than a 0 based array which might lead to cleaner code.
-    enum Dir { North, East, South, West, Up, Down }
 
     static class Util
     {
@@ -167,9 +135,14 @@ namespace Version3
         {
             r1[d1] = r2;
         }
+
+        static public void Link (RoomSet RS, int index1, Dir d1, int index2, Dir d2 )
+        {
+            Link(RS[index1], d1, RS[index2], d2);
+        }
     }
 
-    sealed class RoomSet : IEnumerable<RoomSet.Room>
+    class RoomSet : IEnumerable<RoomSet.Room>
     {
         public class Room
         {
@@ -272,8 +245,6 @@ namespace Version3
 
         }
     }
-
-
 
     class Player
     {
