@@ -11,97 +11,103 @@ namespace Version3
 {
     class Game
     {
-        public class CommandActions
+        /// <summary>
+        ///  Game Commands
+        ///  Command need to be of the delegate type CommandDipatcher
+        ///  void(string)
+        ///  The full command line is passed in the string for commands 
+        ///  that need to inspect it - single-word commands can generally 
+        ///  ignore this parameter.
+        ///  Simple commands can also be added on the fly using lambda 
+        ///  functions, see the static constructor of CommandParser for
+        ///  an example of this.
+        /// </summary>
+
+        public void InitializeCommandActions()
         {
-            private Game G;
-
-            public CommandActions(Game G)
+            //Add all direction variants to commands and point them at 'Move'
+            foreach (string S in DirCanonical.Keys)
             {
-                this.G = G;
-
-                //Add all direction variants to commands and point them at 'Move'
-                foreach (string S in DirCanonical.Keys)
-                {
-                    CommandParser.AddCommand(S, this.Move);
-                }
-
-                CommandParser.AddCommand("look", Look);
-                CommandParser.AddCommand("quit", Quit);
-                CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
-
+                CommandParser.AddCommand(S, this.Move);
             }
 
-            public void Look(string command = "") =>
-                Console.WriteLine($"You are in {G.PlayerOne.CurrentRoom.Description}\n" +
-                    $"{G.PlayerOne.CurrentRoom.GetValidExitsAsString()}");
-
-
-            public void Quit(string command = "")
-            {
-                Console.WriteLine("The roof falls in on your head. You die.");
-                Thread.Sleep(2000);
-                Environment.Exit(0);
-            }
-
-            public void Move(string command)
-            {
-                command = command.Split(' ')[0];
-                RoomSet.Room cr = G.PlayerOne.CurrentRoom;
-                Dir d = (Dir)Enum.Parse(typeof(Dir), DirCanonical[command], true);
-                List<Dir> validExits = cr.GetValidExits();
-                if (!validExits.Contains(d)) { Console.WriteLine("I can't go that way!"); return; }
-                else
-                {
-                    Console.WriteLine($"Going {d}");
-                    G.PlayerOne.CurrentRoom = cr[d];
-
-                    if (!G.PlayerOne.CurrentRoom.Equals(RoomSet.Exit.Instance))
-                    {
-                        G.Turn++;
-                        this.Look();
-                    }
-                    else this.GameOver();
-                }
-            }
-
-            public void GameOver(string command = "")
-            {
-                Console.WriteLine($"{G.Turn}: Congratulations {G.PlayerOne.Name}! You have escaped" +
-                    $" the Maze of Doom and are assured fame, riches and a free coffee.");
-                Console.WriteLine($"You escaped in {G.Turn} turns. Press any key to quit.");
-                Console.ReadKey();
-                Environment.Exit(0);
-            }
-
-            // create a dictionary mapping between legitimate string representations of directions
-            // and the actual string used
-            // Accepted at this time [North] [north] [N] [n] => North
-            // Allows multiple forms of a command to be accepted
-            public static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
-            private static string[] names = Enum.GetNames(typeof(Dir));
-            static CommandActions()
-            {
-                foreach (string name in names)
-                {
-                    DirCanonical[name] = name;
-                    DirCanonical[name.ToLower()] = name;
-                    DirCanonical[name.Substring(0, 1).ToLower()] = name;
-                    DirCanonical[name.Substring(0, 1).ToUpper()] = name;
-                }
-            }
-
+            CommandParser.AddCommand("look", Look);
+            CommandParser.AddCommand("quit", Quit);
+            CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
 
         }
 
-        public CommandActions CA { get; set; }
-        public int Turn { get; set; } = 1;
+        public void Look(string command = "") =>
+            Console.WriteLine($"You are in {PlayerOne.CurrentRoom.Description}\n" +
+                $"{PlayerOne.CurrentRoom.GetValidExitsAsString()}");
+
+        public void Quit(string command = "")
+        {
+            Console.WriteLine("The roof falls in on your head. You die.");
+            Thread.Sleep(2000);
+            Environment.Exit(0);
+        }
+
+        public void Move(string command)
+        {
+            command = command.Split(' ')[0];
+            RoomSet.Room cr = this.PlayerOne.CurrentRoom;
+            Dir d = (Dir)Enum.Parse(typeof(Dir), DirCanonical[command], true);
+            List<Dir> validExits = cr.GetValidExits();
+            if (!validExits.Contains(d)) { Console.WriteLine("I can't go that way!"); return; }
+            else
+            {
+                Console.WriteLine($"Going {d}");
+                this.PlayerOne.CurrentRoom = cr[d];
+
+                if (!this.PlayerOne.CurrentRoom.Equals(RoomSet.Exit.Instance))
+                {
+                    this.Turn++;
+                    this.Look();
+                }
+                else this.GameOver();
+            }
+        }
+
+        public void GameOver(string command = "")
+        {
+            Console.WriteLine($"{Turn}: Congratulations {PlayerOne.Name}! You have escaped" +
+                $" the Maze of Doom and are assured fame, riches and a free coffee.");
+            Console.WriteLine($"You escaped in {Turn} turns. Press any key to quit.");
+            Console.ReadKey();
+            Environment.Exit(0);
+        }
+
+        // Allows multiple forms of a command to be accepted by
+        // creating a dictionary mapping between legitimate string representations of directions
+        // and the actual string used
+        // Accepted at this time [North] [north] [N] [n] => North
+        
+        private static readonly Dictionary<string, string> DirCanonical = new Dictionary<string, string>();
+        private static string[] names = Enum.GetNames(typeof(Dir));
+        static Game()
+        {
+            foreach (string name in names)
+            {
+                DirCanonical[name] = name;
+                DirCanonical[name.ToLower()] = name;
+                DirCanonical[name.Substring(0, 1).ToLower()] = name;
+                DirCanonical[name.Substring(0, 1).ToUpper()] = name;
+            }
+        }
+
+        /// <summary>
+        /// Properties, fields and non-command methods
+        /// </summary>
+
+        public int Turn { get; private set; } = 1;
         public Player PlayerOne { get; private set; }
         public readonly RoomSet maze = new RoomSet();
         public Game(Player P)
         {
             PlayerOne = P;
-            CA = new CommandActions(this);
             this.RoomInitializor();
+            this.InitializeCommandActions();
         }
 
         static void Main(string[] args)
@@ -204,6 +210,10 @@ namespace Version3
             }
         }
 
+        /// <summary>
+        /// Singleton class: a reference may be obtained as Exit.Instance
+        /// Purpose is to ensure that there is only one exit and that it can be recognized.
+        /// </summary>
         public class Exit : Room
         {
             private static readonly Exit instance = new Exit("The exit");
@@ -263,15 +273,8 @@ namespace Version3
         }
     }
 
-    /// <summary>
-    /// Singleton class: a reference may be obtained as Exit.Instance
-    /// Purpose is to ensure that there is only one exit and that it can be recognized.
-    /// </summary>
-    /// <remarks>
-    /// Created automatically and added to RoomSet like any other Room - this means RoomSet.Instance.Count 
-    /// is always at least one.
-    /// </remarks>
-   
+
+
     class Player
     {
         public RoomSet.Room CurrentRoom { get; set; }
