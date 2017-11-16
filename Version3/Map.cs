@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Version3.Dir;
+using static Version4.Dir;
 
-namespace Version3
+namespace Version4
 {
     // A Map object needs to define 
     // i) a name 
@@ -14,10 +14,18 @@ namespace Version3
     // iv) An exit
     class Map
     {
-        //Parameterless constructor only intended for testing
-        public Map()
+        public Map(string name, string[] descriptions, BiLink[] links, ExitDef exit)
         {
-            Descriptions = new string[] {
+            MapName = name;
+            Descriptions = descriptions;
+            Links = links;
+            ExitLocation = exit;
+        }
+
+        //Parameterless constructor only intended for testing
+        public Map() : this (
+            "Use for testing only",
+            new string[] {
             //1
             "A room",
             //2
@@ -26,15 +34,15 @@ namespace Version3
             "a third room",
             //4
             "Room 101"
-            };
-            Links = new BiLink[] {
+            },
+            new BiLink[] {
                 new BiLink(1,East,2,West),
                 new BiLink(2,South,4,North),
                 new BiLink(4,West,3,East),
                 new BiLink(3,North,1,South)
-            };
-            ExitLocation = new ExitDef(4, South);
-        }
+            },
+            new ExitDef(4, South))
+        { }
          
         public string MapName { get; private set; }
 

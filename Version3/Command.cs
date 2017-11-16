@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Version3
+namespace Version4
 {
 
     // Need a delegate to define the type for a command

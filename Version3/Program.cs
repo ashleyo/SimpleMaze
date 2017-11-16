@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Version3.Dir;
+using static Version4.Dir;
 using System.Threading;
 
-namespace Version3
+namespace Version4
 {
     //TODO - Think about this - if the first element were always 'None' then useful exits could be treated as a 1 based array rather than a 0 based array which might lead to cleaner code.
     enum Dir { North, East, South, West, Up, Down }
@@ -26,12 +26,17 @@ namespace Version3
             PlayerOne = P;
             maze = Map.GetRoomSet(new Map());
             PlayerOne.CurrentRoom = maze[1]; //arbitrary, but starting in room 0 (the exit) is not supported
-            this.InitializeCommandActions();
+            InitializeCommandActions();
+            Splash();
         }
 
         static void Main(string[] args)
         {
             Game G = new Game(new Player() { Name = "Ashley" });
+
+            //An experiment
+            OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom.Id, "A sparkling egg", 5, "A bejewelled Egg, the name 'Faberge' is engraved on the base.");
+            ItemBase.AddNewItem(I);
 
             while (true)
             {
@@ -40,6 +45,19 @@ namespace Version3
             }
         }
 
+        private void Splash()
+        {
+            ConsoleColor old = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($@"
+            Welcome, {PlayerOne.Name}, to the Dungeon of Extended Evening.
+            Good luck with it!
+
+            (c) A P Oliver 2017
+        
+        ");
+            Console.ForegroundColor = old;
+        }
         /// <summary>
         ///  Game Commands
         ///  Command need to be of the delegate type CommandDipatcher
@@ -55,7 +73,7 @@ namespace Version3
         ///  other commands to redirect to them.
         /// </summary>
 
-        public void InitializeCommandActions()
+        private void InitializeCommandActions()
         {
             //Add all direction variants to commands and point them at 'Move'
             foreach (string S in CommandParser.DirCanonical.Keys)
@@ -71,18 +89,30 @@ namespace Version3
 
         #region Commands
 
-        public void Look(string command = "") =>
+        //these can be private and probably should be to avoid cluttering Game's public space too much
+
+        private void Look(string command = "")
+        {
             Console.WriteLine($"You are in {PlayerOne.CurrentRoom.Description}\n" +
                 $"{PlayerOne.CurrentRoom.GetValidExitsAsString()}");
+            List<Item> itemshere = PlayerOne.CurrentRoom.GetInventory;
+            if (itemshere.Count > 0)
+            {
+                Console.Write("You see ");
+                foreach (Item I in itemshere)
+                    Console.Write($"{I.Name} ");
+                Console.WriteLine();
+            }
+        }
 
-        public void Quit(string command = "")
+        private void Quit(string command = "")
         {
             Console.WriteLine("The roof falls in on your head. You die.");
             Thread.Sleep(2000);
             Environment.Exit(0);
         }
 
-        public void Move(string command)
+        private void Move(string command)
         {
             command = command.Split(' ')[0];
             RoomSet.Room cr = this.PlayerOne.CurrentRoom;
@@ -103,7 +133,7 @@ namespace Version3
             }
         }
 
-        public void GameOver(string command = "")
+        private void GameOver(string command = "")
         {
             Console.WriteLine($"{Turn}: Congratulations {PlayerOne.Name}! You have escaped" +
                 $" the Maze of Doom and are assured fame, riches and a free coffee.");
@@ -111,6 +141,14 @@ namespace Version3
             Console.ReadKey();
             Environment.Exit(0);
         }
+        
+        //this will need to be written quite carefully
+        // command will be like 'take egg'
+        // separate keyword and data - easy
+        // search current room's inventory for a name that matches data - a bit harder, what does 'matches' mean?
+        // find the object in the ItemBase and alter its Guid to be ours - reasonably easy as we have used the name 
+        // as the database key (and probably unnecessary as we have a reference to the actual object already)
+        private void Take(string command) { }
 
         #endregion
     }
@@ -144,7 +182,7 @@ namespace Version3
 
     class RoomSet : IEnumerable<RoomSet.Room>
     {
-        public class Room
+        public class Room : ObjectOwner
         {
             private Room[] exits = new Room[Enum.GetNames(typeof(Dir)).Length];
 
@@ -246,9 +284,22 @@ namespace Version3
         }
     }
 
-    class Player
+    partial class Player : ObjectOwner
     {
         public RoomSet.Room CurrentRoom { get; set; }
         public string Name { get; set; }
+    }
+
+    //slight overkill at the moment, could just use object references to identify owners 
+    //but Guids might be useful if we ever want to persist inventories 
+    abstract class ObjectOwner
+    {
+        private Guid id = Guid.NewGuid();
+        public Guid Id => id;
+        public List<Item> GetInventory => ItemBase.GetItemsByOwner(id);
+        // and if we ever do want to restore players/rooms etc from a save file 
+        // we'll need a constructor that allows us to set Id back to a given value
+        public ObjectOwner() { }
+        public ObjectOwner(Guid newguid) { id = newguid; } 
     }
 }
