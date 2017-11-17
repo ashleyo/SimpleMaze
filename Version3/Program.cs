@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Version4.Dir;
 using System.Threading;
@@ -35,7 +36,9 @@ namespace Version4
             Game G = new Game(new Player() { Name = "Ashley" });
 
             //An experiment
-            OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom.Id, "A sparkling egg", 5, "A bejewelled Egg, the name 'Faberge' is engraved on the base.");
+            OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom, "A sparkling egg", 5, "A bejewelled Egg, the name 'Faberge' is engraved on the base.");
+            ItemBase.AddNewItem(I);
+            I = new OwnedItem(G.PlayerOne.CurrentRoom, "A rotten egg", 1, "Smells of sulphur ...");
             ItemBase.AddNewItem(I);
 
             while (true)
@@ -84,7 +87,8 @@ namespace Version4
             CommandParser.AddCommand("look", Look);
             CommandParser.AddCommand("quit", Quit);
             CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
-
+            CommandParser.AddCommand("take", Take);
+            CommandParser.AddCommand("inv", Inv);
         }
 
         #region Commands
@@ -95,14 +99,18 @@ namespace Version4
         {
             Console.WriteLine($"You are in {PlayerOne.CurrentRoom.Description}\n" +
                 $"{PlayerOne.CurrentRoom.GetValidExitsAsString()}");
-            List<Item> itemshere = PlayerOne.CurrentRoom.GetInventory;
+            List<OwnedItem> itemshere = PlayerOne.CurrentRoom.GetInventory;
             if (itemshere.Count > 0)
             {
-                Console.Write("You see ");
-                foreach (Item I in itemshere)
-                    Console.Write($"{I.Name} ");
-                Console.WriteLine();
+                Console.WriteLine("You see here:");
+                Console.Write(ItemBase.Formatter(itemshere));
             }
+            //{
+             //   Console.Write("You see ");
+              //  foreach (Item I in itemshere)
+              //      Console.Write($"{I.Name} ");
+              //  Console.WriteLine();
+            //}
         }
 
         private void Quit(string command = "")
@@ -145,10 +153,26 @@ namespace Version4
         //this will need to be written quite carefully
         // command will be like 'take egg'
         // separate keyword and data - easy
-        // search current room's inventory for a name that matches data - a bit harder, what does 'matches' mean?
+        // search current room's inventory for a name that matches data -- a bit harder, what does 'matches' mean ?? --
         // find the object in the ItemBase and alter its Guid to be ours - reasonably easy as we have used the name 
         // as the database key (and probably unnecessary as we have a reference to the actual object already)
-        private void Take(string command) { }
+        private void Take(string command) {
+            Match m = Regex.Match(command,@"(\w*) (\w.*)");
+            string request = m.Groups[2].Value;
+            List<OwnedItem> present = ItemBase.GetItemsByOwner(PlayerOne.CurrentRoom);
+            foreach (OwnedItem I in present.ToList<Item>())
+                if (!Regex.Match(I.Name, request).Success) { present.Remove(I); }
+            if (present.Count == 0) { Console.WriteLine($"I don't see that."); return; }
+            if (present.Count > 1) { Console.WriteLine($"{request}? Can you be more specific?"); return; }
+            Console.WriteLine($"{present[0].Name} is taken");
+            present[0].TransferTo(PlayerOne);
+        }
+
+        private void Inv(string command="")
+        {
+            Console.WriteLine("You have:");
+            Console.Write(ItemBase.Formatter(ItemBase.GetItemsByOwner(PlayerOne)));
+        }
 
         #endregion
     }
@@ -296,7 +320,7 @@ namespace Version4
     {
         private Guid id = Guid.NewGuid();
         public Guid Id => id;
-        public List<Item> GetInventory => ItemBase.GetItemsByOwner(id);
+        public List<OwnedItem> GetInventory => ItemBase.GetItemsByOwner(this);
         // and if we ever do want to restore players/rooms etc from a save file 
         // we'll need a constructor that allows us to set Id back to a given value
         public ObjectOwner() { }

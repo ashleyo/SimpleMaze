@@ -30,27 +30,39 @@ namespace Version4
         {
             Items[item.Name] = item;
         }
-        public static List<Item> GetItemsByOwner(Guid owner)
+        public static List<OwnedItem> GetItemsByOwner(ObjectOwner owner)
         {
-            List<Item> items = new List<Item>();
+            List<OwnedItem> items = new List<OwnedItem>();
             foreach (OwnedItem I in Items.Values)
             {
-                if (I.Owner.Equals(owner)) items.Add(I);
+                if (I.OwnerID.Equals(owner.Id)) items.Add(I);
             }
             return items;
+        }
+
+        public static string Formatter<T>(List<T> items)
+        {
+            if (items.Count == 0) return $"Nothing at all.\n";
+            StringBuilder s = new StringBuilder();
+            foreach (T I in items)
+            {
+                Item item = I as Item;
+                s.AppendLine($"{item.Name}");
+            }
+            return s.ToString();   
         }
     }
 
     class OwnedItem: Item
     {
-        public Guid Owner { get; set; }
-        public OwnedItem(Guid owner, string name, int weight, string description = "a mysterious item") : base(name, weight, description)
+        public Guid OwnerID { get; set; }
+        public OwnedItem(ObjectOwner owner, string name, int weight, string description = "a mysterious item") : base(name, weight, description)
         {
-            Owner = owner;
+            OwnerID = owner.Id;
         }
-        public bool TransferTo(Guid newowner)
+        public bool TransferTo(ObjectOwner newowner)
         {
-            Owner = newowner;
+            OwnerID = newowner.Id;
             return true;
         }
     }
