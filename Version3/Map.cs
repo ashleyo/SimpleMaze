@@ -24,10 +24,10 @@ namespace Version4
 
         //Parameterless constructor only intended for testing
         public Map() : this (
-            "Use for testing only",
+            "Maze of Extended Evening",
             new string[] {
             //1
-            "A room",
+            "a room",
             //2
             "another room",
             //3

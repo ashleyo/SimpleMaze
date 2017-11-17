@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using static System.ConsoleColor;
 
 namespace Version4
 {
@@ -45,7 +46,7 @@ namespace Version4
         }
         public static void GetNextCommand()
         {
-            Console.Write("What next? ");
+            Util.Write(Green, "What next? ");
             ExecuteCommand(Console.ReadLine().ToLower()); //force input to lower case 
         }
     }

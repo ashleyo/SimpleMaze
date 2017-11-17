@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Version4.Dir;
 using System.Threading;
+using static System.ConsoleColor;
 
 namespace Version4
 {
@@ -22,10 +23,13 @@ namespace Version4
         public int Turn { get; private set; } = 1;
         public Player PlayerOne { get; private set; }
         public readonly RoomSet maze; 
+        public string Name { get; private set; }
         public Game(Player P)
         {
             PlayerOne = P;
-            maze = Map.GetRoomSet(new Map());
+            Map M = new Map();
+            Name = M.MapName;
+            maze = Map.GetRoomSet(M);
             PlayerOne.CurrentRoom = maze[1]; //arbitrary, but starting in room 0 (the exit) is not supported
             InitializeCommandActions();
             Splash();
@@ -35,32 +39,33 @@ namespace Version4
         {
             Game G = new Game(new Player() { Name = "Ashley" });
 
-            //An experiment
-            OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom, "A sparkling egg", 5, "A bejewelled Egg, the name 'Faberge' is engraved on the base.");
+            //Experimental objects for testing, need to be loaded as part of Map eventually
+            OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom, "A sparkling egg", 5, "a bejewelled Egg, the name 'Faberge' is engraved on the base.");
             ItemBase.AddNewItem(I);
-            I = new OwnedItem(G.PlayerOne.CurrentRoom, "A rotten egg", 1, "Smells of sulphur ...");
+            I = new OwnedItem(G.PlayerOne.CurrentRoom, "A rotten egg", 1, "smells of sulphur ...");
             ItemBase.AddNewItem(I);
+            ////////////////////////////////////////////////////////////////////////////////
 
             while (true)
             {
-                Console.Write($"{G.Turn}: ");
+                Util.Write(Green, $"{G.Turn}: ");
                 CommandParser.GetNextCommand();
             }
         }
 
         private void Splash()
         {
-            ConsoleColor old = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($@"
-            Welcome, {PlayerOne.Name}, to the Dungeon of Extended Evening.
+            Util.Write(Green,$@"
+            Welcome, {PlayerOne.Name}, to the {this.Name}.
             Good luck with it!
 
             (c) A P Oliver 2017
         
         ");
-            Console.ForegroundColor = old;
+            Console.WriteLine();
+
         }
+
         /// <summary>
         ///  Game Commands
         ///  Command need to be of the delegate type CommandDipatcher
@@ -84,11 +89,22 @@ namespace Version4
                 CommandParser.AddCommand(S, this.Move);
             }
 
+            CommandParser.AddCommand("help", (s) => Console.WriteLine(@"
+    'look' or 'inspect' will tell you what you can see
+    'inv' will tell you what you have
+    you can 'take' or 'drop' things
+    enter a direction to move that way
+    'quit' to /ragequit
+    Find the exit in the fewest possible turns.
+
+    "));
+
             CommandParser.AddCommand("look", Look);
             CommandParser.AddCommand("quit", Quit);
-            CommandParser.AddCommand("help", (s) => Console.WriteLine("'look' will tell you what you can see\nenter a direction to move that way"));
             CommandParser.AddCommand("take", Take);
             CommandParser.AddCommand("inv", Inv);
+            CommandParser.AddCommand("drop", Drop);
+            CommandParser.AddCommand("inspect", Inspect);
         }
 
         #region Commands
@@ -99,18 +115,12 @@ namespace Version4
         {
             Console.WriteLine($"You are in {PlayerOne.CurrentRoom.Description}\n" +
                 $"{PlayerOne.CurrentRoom.GetValidExitsAsString()}");
-            List<OwnedItem> itemshere = PlayerOne.CurrentRoom.GetInventory;
+            List<Item> itemshere = PlayerOne.CurrentRoom.GetInventory;
             if (itemshere.Count > 0)
             {
                 Console.WriteLine("You see here:");
                 Console.Write(ItemBase.Formatter(itemshere));
             }
-            //{
-             //   Console.Write("You see ");
-              //  foreach (Item I in itemshere)
-              //      Console.Write($"{I.Name} ");
-              //  Console.WriteLine();
-            //}
         }
 
         private void Quit(string command = "")
@@ -144,28 +154,47 @@ namespace Version4
         private void GameOver(string command = "")
         {
             Console.WriteLine($"{Turn}: Congratulations {PlayerOne.Name}! You have escaped" +
-                $" the Maze of Doom and are assured fame, riches and a free coffee.");
+                $" the {this.Name} and are assured fame, riches and a free coffee.");
             Console.WriteLine($"You escaped in {Turn} turns. Press any key to quit.");
             Console.ReadKey();
             Environment.Exit(0);
         }
         
-        //this will need to be written quite carefully
-        // command will be like 'take egg'
-        // separate keyword and data - easy
-        // search current room's inventory for a name that matches data -- a bit harder, what does 'matches' mean ?? --
-        // find the object in the ItemBase and alter its Guid to be ours - reasonably easy as we have used the name 
-        // as the database key (and probably unnecessary as we have a reference to the actual object already)
         private void Take(string command) {
-            Match m = Regex.Match(command,@"(\w*) (\w.*)");
-            string request = m.Groups[2].Value;
-            List<OwnedItem> present = ItemBase.GetItemsByOwner(PlayerOne.CurrentRoom);
-            foreach (OwnedItem I in present.ToList<Item>())
-                if (!Regex.Match(I.Name, request).Success) { present.Remove(I); }
-            if (present.Count == 0) { Console.WriteLine($"I don't see that."); return; }
-            if (present.Count > 1) { Console.WriteLine($"{request}? Can you be more specific?"); return; }
-            Console.WriteLine($"{present[0].Name} is taken");
-            present[0].TransferTo(PlayerOne);
+            string request = ExtractDataFromCommand(command);
+            List<Item> present = ItemBase.FindAllMatchingItems(PlayerOne.CurrentRoom, request);
+
+            // If we have 0 or more than 1 handle the 'error'
+            if (present.Count !=1 )
+            {
+                if (present.Count == 0) Console.WriteLine($"I don't see that.");
+                else Console.WriteLine($"{request}? Can you be more specific?");
+                return;
+            }
+
+            //If we have precisely 1 do the transfer
+            OwnedItem taken = present[0] as OwnedItem;
+            Console.WriteLine($"{taken.Name} is taken");
+            taken.TransferTo(PlayerOne);
+        }
+
+        private void Drop(string command)
+        {
+            string request = ExtractDataFromCommand(command);
+            List<Item> playerhas = ItemBase.FindAllMatchingItems(PlayerOne, request);
+
+            // If we have 0 or more than 1 handle the 'error'
+            if (playerhas.Count != 1)
+            {
+                if (playerhas.Count == 0) Console.WriteLine($"I don't have that.");
+                else Console.WriteLine($"{request}? Can you be more specific?");
+                return;
+            }
+
+            //If we have precisely 1 do the transfer
+            OwnedItem dropped = playerhas[0] as OwnedItem;
+            Console.WriteLine($"{dropped.Name} was dropped");
+            dropped.TransferTo(PlayerOne.CurrentRoom);
         }
 
         private void Inv(string command="")
@@ -174,11 +203,34 @@ namespace Version4
             Console.Write(ItemBase.Formatter(ItemBase.GetItemsByOwner(PlayerOne)));
         }
 
+        private void Inspect(string command)
+        {
+            string request = ExtractDataFromCommand(command);
+            List<Item> itemshere = ItemBase.FindAllMatchingItems(PlayerOne.CurrentRoom, request);
+            if (itemshere.Count > 0)
+            {
+                Console.WriteLine("You see here:");
+                Console.Write(ItemBase.Formatter(itemshere, true));
+            }
+
+        }
+
+        // Utility to get e.g. 'rotten egg' from 'drop rotten egg'
+        private string ExtractDataFromCommand(string command) => Regex.Match(command, @"(\w*) (\w.*)").Groups[2].Value;       
+
         #endregion
     }
 
     static class Util
     {
+        static public void Write(ConsoleColor C, string toWrite)
+        {
+            ConsoleColor old = Console.ForegroundColor;
+            Console.ForegroundColor = C;
+            Console.Write(toWrite);
+            Console.ForegroundColor = old;
+        }
+
         static public string DirHelpText()
         {
             StringBuilder s = new StringBuilder();
@@ -320,7 +372,7 @@ namespace Version4
     {
         private Guid id = Guid.NewGuid();
         public Guid Id => id;
-        public List<OwnedItem> GetInventory => ItemBase.GetItemsByOwner(this);
+        public List<Item> GetInventory => ItemBase.GetItemsByOwner(this);
         // and if we ever do want to restore players/rooms etc from a save file 
         // we'll need a constructor that allows us to set Id back to a given value
         public ObjectOwner() { }

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using IList = System.Collections.Generic.List<Version4.Item>; //Would this make the code cleaner or just more obscure?
 
 namespace Version4
 {
@@ -30,9 +32,10 @@ namespace Version4
         {
             Items[item.Name] = item;
         }
-        public static List<OwnedItem> GetItemsByOwner(ObjectOwner owner)
+        public static List<Item> GetItemsByOwner(ObjectOwner owner)
         {
-            List<OwnedItem> items = new List<OwnedItem>();
+            // IList items = new IList();
+            List<Item> items = new List<Item>();
             foreach (OwnedItem I in Items.Values)
             {
                 if (I.OwnerID.Equals(owner.Id)) items.Add(I);
@@ -40,16 +43,28 @@ namespace Version4
             return items;
         }
 
-        public static string Formatter<T>(List<T> items)
+        public static string Formatter(List<Item> items, bool withDescription=false)
         {
             if (items.Count == 0) return $"Nothing at all.\n";
             StringBuilder s = new StringBuilder();
-            foreach (T I in items)
+            foreach (Item I in items)
             {
                 Item item = I as Item;
-                s.AppendLine($"{item.Name}");
+                if (withDescription)
+                    s.AppendLine($"{item.Name}: {item.Description}");
+                else
+                    s.AppendLine($"{item.Name}");
             }
             return s.ToString();   
+        }
+
+        public static List<Item> FindAllMatchingItems(ObjectOwner owner, string search)
+        {
+            // Get list of room items and remove from it any that do not match
+            List<Item> present = ItemBase.GetItemsByOwner(owner);
+            foreach (OwnedItem I in present.ToList<Item>())
+                if (!Regex.Match(I.Name, search).Success) { present.Remove(I); }
+            return present;
         }
     }
 
