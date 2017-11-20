@@ -14,6 +14,11 @@ namespace Version4
     // iv) An exit
     class Map
     {
+        //TODO Needs to store items as well OR a separate and similar 
+        //class needed to take care of item initialization
+        //Note that this means the Map object has to store Player and Room
+        //Guids and restore them - about this point we wonder if an actual database 
+        //might be a better approach ...
         public Map(string name, string[] descriptions, BiLink[] links, ExitDef exit)
         {
             MapName = name;
@@ -82,7 +87,7 @@ namespace Version4
 
             rooms.AddMultipleRooms(M.Descriptions);
             foreach (BiLink BL in M.Links)
-                Util.Link(rooms,BL.index1, BL.d1, BL.index2, BL.d2);
+                RoomSet.Link(rooms,BL.index1, BL.d1, BL.index2, BL.d2);
               
             //set exit and yield
             rooms[M.ExitLocation.RoomIndex][M.ExitLocation.Direction] 

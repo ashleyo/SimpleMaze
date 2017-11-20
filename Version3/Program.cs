@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using static Version4.Dir;
 using System.Threading;
 using static System.ConsoleColor;
+using Microsoft.Data.Sqlite.Internal;
 
 namespace Version4
 {
@@ -37,7 +38,7 @@ namespace Version4
 
         static void Main(string[] args)
         {
-            Game G = new Game(new Player() { Name = "Ashley" });
+            //dbtest.Test();
 
             //Experimental objects for testing, need to be loaded as part of Map eventually
             OwnedItem I = new OwnedItem(G.PlayerOne.CurrentRoom, "A sparkling egg", 5, "a bejewelled Egg, the name 'Faberge' is engraved on the base.");
@@ -51,6 +52,7 @@ namespace Version4
                 Util.Write(Green, $"{G.Turn}: ");
                 CommandParser.GetNextCommand();
             }
+
         }
 
         private void Splash()
@@ -89,11 +91,11 @@ namespace Version4
                 CommandParser.AddCommand(S, this.Move);
             }
 
-            CommandParser.AddCommand("help", (s) => Console.WriteLine(@"
+            CommandParser.AddCommand("help", (s) => Console.WriteLine($@"
     'look' or 'inspect' will tell you what you can see
     'inv' will tell you what you have
-    you can 'take' or 'drop' things
-    enter a direction to move that way
+    you can 'take' or 'drop' items, use enough of their name to be unique
+    enter a direction to move that way, potential directions are {Util.DirHelpText()}
     'quit' to /ragequit
     Find the exit in the fewest possible turns.
 
@@ -109,7 +111,7 @@ namespace Version4
 
         #region Commands
 
-        //these can be private and probably should be to avoid cluttering Game's public space too much
+        //these can be private and probably should be to avoid cluttering Game's public namespace too much
 
         private void Look(string command = "")
         {
@@ -153,9 +155,9 @@ namespace Version4
 
         private void GameOver(string command = "")
         {
-            Console.WriteLine($"{Turn}: Congratulations {PlayerOne.Name}! You have escaped" +
-                $" the {this.Name} and are assured fame, riches and a free coffee.");
-            Console.WriteLine($"You escaped in {Turn} turns. Press any key to quit.");
+            Util.Write(Yellow,$"{Turn}: Congratulations {PlayerOne.Name}!\nYou have escaped" +
+                $" the {this.Name} and are assured fame, riches and a free coffee.\n");
+            Util.Write(Yellow, $"You escaped in {Turn} turns. Press any key to quit.\n");
             Console.ReadKey();
             Environment.Exit(0);
         }
@@ -231,28 +233,27 @@ namespace Version4
             Console.ForegroundColor = old;
         }
 
+        static public void WriteLine(ConsoleColor C, string toWrite)
+        {
+            ConsoleColor old = Console.ForegroundColor;
+            Console.ForegroundColor = C;
+            Console.WriteLine(toWrite);
+            Console.ForegroundColor = old;
+        }
+
         static public string DirHelpText()
         {
             StringBuilder s = new StringBuilder();
             foreach (string t in Enum.GetNames(typeof(Dir)))
                 s.AppendFormat("{0} ", t);
             return s.ToString().TrimEnd();
-        }
+        }       
 
-        static public void Link(RoomSet.Room r1, Dir d1, RoomSet.Room r2, Dir d2)
+        static public IEnumerable<string> GetWords(string phrase)
         {
-            Link(r1, d1, r2);
-            Link(r2, d2, r1);
-        }
-
-        static public void Link(RoomSet.Room r1, Dir d1, RoomSet.Room r2)
-        {
-            r1[d1] = r2;
-        }
-
-        static public void Link (RoomSet RS, int index1, Dir d1, int index2, Dir d2 )
-        {
-            Link(RS[index1], d1, RS[index2], d2);
+            Regex regex = new Regex(@"\b[\s,\.\-:;]*");
+            var words = regex.Split(phrase).Where(x => !string.IsNullOrEmpty(x));
+            return words;
         }
     }
 
@@ -260,7 +261,17 @@ namespace Version4
     {
         public class Room : ObjectOwner
         {
+            //public enum ExitStatus { Open, Closed}
+
+            //public struct RoomExit
+            //{
+            //    public Room ExitTo { get; set; }
+            //    public ExitStatus status { get; set; }
+            //    public string Description { get; set; }
+           // }
+
             private Room[] exits = new Room[Enum.GetNames(typeof(Dir)).Length];
+            //private RoomExit[] exits = new RoomExit[Enum.GetNames(typeof(Dir)).Length];
 
             public string Description { get; set; }
 
@@ -349,6 +360,8 @@ namespace Version4
             return this.GetEnumerator();
         }
 
+        //Utility methods
+
         //Allow multiple rooms to be added from an array of descriptions
         public void AddMultipleRooms(string[] descs)
         {
@@ -358,9 +371,26 @@ namespace Version4
             }
 
         }
+
+        static public void Link(RoomSet.Room r1, Dir d1, RoomSet.Room r2, Dir d2)
+        {
+            Link(r1, d1, r2);
+            Link(r2, d2, r1);
+        }
+
+        static public void Link(RoomSet.Room r1, Dir d1, RoomSet.Room r2)
+        {
+            r1[d1] = r2;
+        }
+
+        static public void Link(RoomSet RS, int index1, Dir d1, int index2, Dir d2)
+        {
+            Link(RS[index1], d1, RS[index2], d2);
+        }
+
     }
 
-    partial class Player : ObjectOwner
+    class Player : ObjectOwner
     {
         public RoomSet.Room CurrentRoom { get; set; }
         public string Name { get; set; }
